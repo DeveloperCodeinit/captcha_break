@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\DOMDocument;
 
 use  Illuminate\Http\UploadedFile;
-use App\Http\Controllers\COOKIE;
+use App\Http\Controllers\COOKIE; 
 class CaptchaController extends Controller
 {
     function index(){

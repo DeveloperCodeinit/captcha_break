@@ -23,3 +23,7 @@ Route::get('/', function () {
 
 Route::resource('companies', CompanyController::class);
 Route::resource('captcha_solver', CaptchaController::class); 
+
+
+
+

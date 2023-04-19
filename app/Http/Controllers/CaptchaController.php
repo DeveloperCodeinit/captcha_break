@@ -1,19 +1,28 @@
 <?php
-
+//http://127.0.0.1:8000/captcha_solver
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\DOMDocument;
-
+use Illuminate\Support\Facades\Http;
 use  Illuminate\Http\UploadedFile;
 use App\Http\Controllers\COOKIE; 
+use App\Http\Controllers\Exception;
+
+
+use HeadlessChromium\BrowserFactory;
+use HeadlessChromium\Page;
+use HeadlessChromium\Clip;
+use HeadlessChromium\PageUtils\Navigation;
 class CaptchaController extends Controller
 {
     function index(){
-   
-        require '/Applications/MAMP/htdocs/laravel-crud/vendor/autoload.php';
+       
+        echo "Applications";
+       // require '/Applications/XAMPP/htdocs/laravel-crud/vendor/autoload.php';
+        require '/Applications/XAMPP/xamppfiles/htdocs/laravel-crud/vendor/autoload.php';
         
-        define('COOKIE', '');
+       /* define('COOKIE', '');
 
         function getUrl($url, $method='', $vars='', $open=false) {
             $agents = 'Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.204 Safari/534.16';
@@ -60,7 +69,7 @@ class CaptchaController extends Controller
         $html = curl_exec($ch);
         curl_close($ch);
 
-        /* get image from site */
+       // get image from site 
         $dom = new \DOMDocument();
         @$dom->loadHTML($html);
         $img = $dom->getElementsByTagName('img')[4]->getAttribute('src');
@@ -71,11 +80,11 @@ class CaptchaController extends Controller
        echo '$csrf'.$csrf."<br>";
 
 
-       /* upload image on our server */
+      // upload image on our server 
         $img = '/Applications/MAMP/htdocs/laravel-crud/captcha.jpg';
         file_put_contents($img, file_get_contents($url));
 
-        /* read image */
+        // read image 
         $solver = new \TwoCaptcha\TwoCaptcha('827da00473c0c3c92b14bb7c3df1d07a');
         $result = $solver->normal('/Applications/MAMP/htdocs/laravel-crud/captcha.jpg');
         // print_r($result);
@@ -83,9 +92,9 @@ class CaptchaController extends Controller
       echo "<br>";
         echo $result->code . "<br>";  
 
-        /* --- send post request to login the site ---- */
+        // --- send post request to login the site ---- 
      
-        //  /* -- captcha request  --  */
+        //   -- captcha request  --  
         //  $ch = curl_init();
         //  curl_setopt($ch, CURLOPT_URL, 'https://www.dgca.gov.in/digigov-portal/web');
         //  curl_setopt($ch, CURLOPT_POST, 1);
@@ -111,7 +120,7 @@ class CaptchaController extends Controller
    
 
 
-      /* -- login request  --  */
+     //  -- login request  --  
       $ch = curl_init();
       curl_setopt($ch, CURLOPT_URL, 'https://www.dgca.gov.in/digigov-portal/j_spring_security_check');
       curl_setopt($ch, CURLOPT_POST, 1);
@@ -164,11 +173,226 @@ class CaptchaController extends Controller
         //   echo "<pre>";
         //   print_r($response);
           
-       // }
+       // }*/
+ 
+        try {
+
+            require '/Applications/XAMPP/htdocs/laravel-crud/vendor/autoload.php';
+            // create browser instance
+           /* $browserFactory = new BrowserFactory();
+            $browser = $browserFactory->createBrowser();*/
+
+            $options = [
+                'headless' => false,
+                'noSandbox' => true,
+                'keepAlive' => true,
+                'disable-gpu' => true,// add this flag to show the browser window
+                'closeOnExit' => false, // set this option to false to keep the browser open
+
+            ];
+            
+            // create browser
+            $browserFactory = new BrowserFactory();
+            //$browser = $browserFactory->createBrowser($options);
+            $browser = $browserFactory->createBrowser();
+        
+            // create a new page
+            $page = $browser->createPage();
+        
+            // set viewport size to desktop resolution
+            // set viewport size to desktop resolution
+            $viewportWidth = 1920;
+            $viewportHeight = 1080;
+            $page->setViewport($viewportWidth, $viewportHeight);
+        
+            // navigate to URL
+            $page->navigate('https://www.dgca.gov.in/digigov-portal/jsp/dgca/common/login.jsp')->waitForNavigation();
+        
+             // specify the area to capture
+            $x = 956;
+            $y = 330;
+            $width = 110;
+            $height = 50;
+            $clip = new Clip($x, $y, $width, $height);
+            // take screenshot of the specified area
+            $screenshot = $page->screenshot([
+                'clip' => $clip,
+                'format' => 'jpeg',
+            ]);
+            // generate image
+            $screenshot->saveToFile('/Applications/XAMPP/htdocs/laravel-crud/captcha.jpg');
+        
+            // generate PDF of entire page
+            $page->pdf(['printBackground' => true])->saveToFile('/Applications/XAMPP/htdocs/laravel-crud/captcha.pdf');
+            
+
+             // read image 
+            $solver = new \TwoCaptcha\TwoCaptcha('827da00473c0c3c92b14bb7c3df1d07a');
+            $result = $solver->normal('/Applications/XAMPP/htdocs/laravel-crud/captcha.jpg');
+            // print_r($result);
+            echo $captcha = strtoupper($result->code);
+            
+            echo "<br>";
+
+              // execute JavaScript code to set attribute value
+            $elementSelector = 'input[name="txt_Captcha"]';
+            $attributeName = 'value';
+            $attributeValue = $captcha;
+            $page->evaluate("
+                var element = document.querySelector('$elementSelector');
+                element.setAttribute('$attributeName', '$attributeValue');
+            ");
+              // execute JavaScript code to set attribute value
+            $elementSelector = 'input[name="username"]';
+            $attributeName = 'value';
+            $attributeValue = 'IPLTM2020023010';
+            $page->evaluate("
+                var element = document.querySelector('$elementSelector');
+                element.setAttribute('$attributeName', '$attributeValue');
+            ");
+              // execute JavaScript code to set attribute value
+            $elementSelector = 'input[name="password"]';
+            $attributeName = 'value';
+            $attributeValue = 'Fighters12!';
+            $page->evaluate("
+                var element = document.querySelector('$elementSelector');
+                element.setAttribute('$attributeName', '$attributeValue');
+            ");
+            
+
+            // check captcha value
+            $elem = $page->dom()->search('//input[@id="txt_Captcha"]')[0];
+            $attr = $elem->getAttribute('value');
+            echo "txt_Captcha: ".$attr;
+            echo "<br>";
+
+            // check username value
+            $elem = $page->dom()->search('//input[@id="username"]')[0];
+            $attr = $elem->getAttribute('value');
+            echo "username: ".$attr;
+            echo "<br>";
 
 
+            // check password value
+            $elem = $page->dom()->search('//input[@id="password"]')[0];
+            $attr = $elem->getAttribute('value');
+            echo "password: ".$attr;
+            echo "<br>";
+
+            
+            // find the button element
+            $page->evaluate("
+                    var btn = document.querySelector('div.tab-pane.fade.show.active button');
+                    if (btn) {
+                        btn.click();
+                    }
+                ");
+            
+            $page->waitForReload();
+           // $login_btn = $page->dom()->search('//div[@class="tab-pane fade show active"]//button[@type="button"]')[0];
+           // $btn_attr = $login_btn->getAttribute('class');
+
+            //click on login btn
+            sleep(5);
+         
+
+            // get the logout button element and retrieve its class attribute
+            $logout_elem = $page->dom()->search('//a[@id="Logout_btn"]')[0];
+            $logout_attr = $logout_elem->getAttribute('class');
+            echo "logout_elem: ".$logout_attr;
+            echo "<br>";
+            
+
+           
+            $login_elem = $page->dom()->search('//div[@class="side-tabs"]//div[@class="collapse-tabs"]//a')[0];
+            $login_attr = $login_elem->getAttribute('class');
+            echo "logout_attr: ".$login_attr;
+            echo "<br>"; 
+            
+            
+
+
+            // // find the E-log book (sidebar)
+            // $page->evaluate("
+            //         var btn = document.querySelector('.side-tabs .collapse-tabs a');
+            //         if (btn) {
+            //             btn.click();
+            //         }
+            //     ");
+            // sleep(2);
+          
+
+            // find the view E-log book  (sidebar)
+
+            $page->evaluate("
+                var btn = document.querySelector('#a90000603 ul:nth-child(4) li a');
+                if (btn) {
+                    btn.click();
+                }
+             ");
+            
+             sleep(5);
+            
+             
+            // add value to "from date"(searchFromDate)
+            $elementSelector = 'input[name="searchFromDate"]';
+            $attributeName = 'value';
+            $attributeValue = '01/04/2022';
+            $page->evaluate("
+                var element = document.querySelector('$elementSelector');
+                element.setAttribute('$attributeName', '$attributeValue');
+            ");
+
+              // add value to "To date"(searchToDate)
+              $elementSelector = 'input[name="searchToDate"]';
+              $attributeName = 'value';
+              $attributeValue = '05/04/2023';
+              $page->evaluate("
+                  var element = document.querySelector('$elementSelector');
+                  element.setAttribute('$attributeName', '$attributeValue');
+              ");
+
+
+
+            // check searchFromDate value
+            $elem = $page->dom()->search('//input[@id="searchFromDate"]')[0];
+            $attr = $elem->getAttribute('value');
+            echo "searchFromDate: ".$attr;
+            echo "<br>";
+             
+            // submit the form(click on buttonSearch btn)
+            $page->evaluate("
+                var btn = document.querySelector('button#buttonSearch');
+                if (btn) {
+                    btn.click();
+                }
+            ");
+   
+            sleep(5);
+            
+
+            // download the pdf(click on pdf showDownload btn)
+            $page->evaluate("
+                var btn = document.querySelector('#showDownload a:nth-child(1)');
+                if (btn) {
+                    btn.click();
+                }
+            ");
+
+
+
+            echo "logout_attr: ".$logout_attr;
+            echo "<br>";
+            echo "finish";
+        } catch (\Exception $e) {
+
+            echo 'error'.$e->getMessage();
+         }
+        //finally {
+        //     // close browser
+        //    // $browser->close();
+        // }
       
          
      }
 }
-
